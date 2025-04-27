@@ -9,7 +9,11 @@ import {
   Button,
   Typography,
   TextField,
-  InputAdornment
+  InputAdornment,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import { 
   Search as SearchIcon,
@@ -17,11 +21,11 @@ import {
   Brightness4,
   Brightness7,
   ShoppingCart,
-  Logout
+  Logout,
+  Menu as MenuIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import { Link, useNavigate } from 'react-router-dom';
-import { useTheme } from '@mui/material/styles';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -84,13 +88,23 @@ const Header = ({
   isAuthenticated
 }: HeaderProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isDarkMode = theme.palette.mode === 'dark';
   const navigate = useNavigate();
 
+  const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setMobileMenuAnchor(event.currentTarget);
+  };
+
+  const handleMobileMenuClose = () => {
+    setMobileMenuAnchor(null);
+  };
+
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/');
+    onLogout();
+    handleMobileMenuClose();
   };
 
   const handleLogoClick = () => {
@@ -107,56 +121,163 @@ const Header = ({
     onSearch(query);
   };
 
+  const renderMobileMenu = (
+    <Menu
+      anchorEl={mobileMenuAnchor}
+      open={Boolean(mobileMenuAnchor)}
+      onClose={handleMobileMenuClose}
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'right',
+      }}
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}
+    >
+      {isAuthenticated && (
+        <MenuItem onClick={handleMobileMenuClose}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search products..."
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </MenuItem>
+      )}
+      <MenuItem onClick={onThemeToggle}>
+        <IconButton color="inherit">
+          {isDarkMode ? <Brightness7 /> : <Brightness4 />}
+        </IconButton>
+        <Typography>Toggle Theme</Typography>
+      </MenuItem>
+      {isAuthenticated && (
+        <Box>
+          <MenuItem onClick={onCartClick}>
+            <IconButton color="inherit">
+              <Badge badgeContent={cartItemsCount} color="error">
+                <ShoppingCart />
+              </Badge>
+            </IconButton>
+            <Typography>Cart</Typography>
+          </MenuItem>
+          <MenuItem onClick={handleLogout}>
+            <IconButton color="inherit">
+              <Logout />
+            </IconButton>
+            <Typography>Logout</Typography>
+          </MenuItem>
+        </Box>
+      )}
+      {!isAuthenticated && (
+        <MenuItem component={Link} to="/login" onClick={handleMobileMenuClose}>
+          <Typography>Login</Typography>
+        </MenuItem>
+      )}
+    </Menu>
+  );
+
   return (
     <StyledAppBar position="static">
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        <Typography 
+          variant="h6" 
+          component="div" 
+          sx={{ 
+            flexGrow: 1,
+            cursor: 'pointer',
+            fontSize: { xs: '1rem', sm: '1.25rem' }
+          }}
+          onClick={handleLogoClick}
+        >
           Shopping Cart
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {isAuthenticated && (
-            <TextField
-              size="small"
-              placeholder="Search products..."
-              onChange={handleSearchChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          )}
-          <IconButton color="inherit" onClick={onThemeToggle}>
-            {isDarkMode ? <Brightness7 /> : <Brightness4 />}
-          </IconButton>
-          {isAuthenticated && (
+        {isMobile ? (
+          isAuthenticated ? (
             <>
-              <IconButton color="inherit" onClick={onCartClick}>
-                <Badge badgeContent={cartItemsCount} color="error">
-                  <ShoppingCart />
-                </Badge>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconButton color="inherit" onClick={onCartClick}>
+                  <Badge badgeContent={cartItemsCount} color="error">
+                    <ShoppingCart />
+                  </Badge>
+                </IconButton>
+                <IconButton
+                  color="inherit"
+                  onClick={handleMobileMenuOpen}
+                >
+                  <MenuIcon />
+                </IconButton>
+              </Box>
+              {renderMobileMenu}
+            </>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconButton color="inherit" onClick={onThemeToggle}>
+                {isDarkMode ? <Brightness7 /> : <Brightness4 />}
               </IconButton>
               <Button
                 color="inherit"
-                startIcon={<Logout />}
-                onClick={onLogout}
+                component={Link}
+                to="/login"
+                size="small"
               >
-                Logout
+                Login
               </Button>
-            </>
-          )}
-          {!isAuthenticated && (
-            <Button
-              color="inherit"
-              component={Link}
-              to="/login"
-            >
-              Login
-            </Button>
-          )}
-        </Box>
+            </Box>
+          )
+        ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {isAuthenticated && (
+              <TextField
+                size="small"
+                placeholder="Search products..."
+                onChange={handleSearchChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+            <IconButton color="inherit" onClick={onThemeToggle}>
+              {isDarkMode ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
+            {isAuthenticated && (
+              <>
+                <IconButton color="inherit" onClick={onCartClick}>
+                  <Badge badgeContent={cartItemsCount} color="error">
+                    <ShoppingCart />
+                  </Badge>
+                </IconButton>
+                <Button
+                  color="inherit"
+                  startIcon={<Logout />}
+                  onClick={onLogout}
+                >
+                  Logout
+                </Button>
+              </>
+            )}
+            {!isAuthenticated && (
+              <Button
+                color="inherit"
+                component={Link}
+                to="/login"
+              >
+                Login
+              </Button>
+            )}
+          </Box>
+        )}
       </Toolbar>
     </StyledAppBar>
   );

@@ -128,6 +128,10 @@ const App = () => {
     );
   };
 
+  const handleEmptyCart = () => {
+    setCartItems([]);
+  };
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
@@ -183,8 +187,8 @@ const App = () => {
     setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
 
-  if (isLoading) return <LoadingSpinner message="Loading products..." />;
-  if (error) return (
+  if (isLoading && window.location.pathname === '/products') return <LoadingSpinner message="Loading products..." />;
+  if (error && window.location.pathname === '/products') return (
     <ErrorBoundary>
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="h5" color="error">
@@ -258,11 +262,33 @@ const App = () => {
               </Box>
               <Footer />
             </Box>
-            <Drawer anchor="right" open={cartOpen} onClose={() => setCartOpen(false)}>
+            <Drawer 
+              anchor="right" 
+              open={cartOpen} 
+              onClose={() => setCartOpen(false)}
+              PaperProps={{
+                sx: {
+                  width: { xs: '100%', sm: 500 }
+                }
+              }}
+              ModalProps={{
+                keepMounted: false,
+                disablePortal: true,
+                disableEnforceFocus: true,
+                disableAutoFocus: true,
+                disableRestoreFocus: true,
+                hideBackdrop: false,
+                BackdropProps: {
+                  invisible: false,
+                }
+              }}
+            >
               <Cart
                 cartItems={cartItems}
                 addToCart={handleAddToCart}
                 removeFromCart={handleRemoveFromCart}
+                onClose={() => setCartOpen(false)}
+                onEmptyCart={handleEmptyCart}
               />
             </Drawer>
           </Wrapper>
